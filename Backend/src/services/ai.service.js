@@ -39,33 +39,54 @@ const interviewReportSchema=z.object({
      title: z.string().describe("The title of the job for which the interview report is generated"),
 })
 
-async function generateInterviewReport({resume,selfDescription,jobDescription}){
-     const prompt = `Generate an interview report for a candidate with the following details:
-                        Resume: ${resume}
-                        Self Description: ${selfDescription}
-                        Job Description: ${jobDescription}
-                        Generate:
-                                 - minimum 10 technical questions
-                                 - minimum 10 behavioral questions
-                                 - minimum 6 skill gaps
-                                 - exactly 7 preparation days
-                                 - minimum 4 tasks for every preparation day
-                        `
 
-    const response= await ai.models.generateContent({
+async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
+    const prompt = `Generate an interview report for a candidate with the following details:
+        Resume: ${resume}
+        Self Description: ${selfDescription}
+        Job Description: ${jobDescription}
 
-       model: "gemini-3.8-flash",
+        Generate:
+        - minimum 10 technical questions
+        - minimum 10 behavioral questions
+        - minimum 6 skill gaps
+        - exactly 7 preparation days
+        - minimum 4 tasks for every preparation day
+    `;
 
-        contents:prompt,
-        config:{
-        responseMimeType:"application/json",
-        responseJsonSchema: z.toJSONSchema(interviewReportSchema)
+    const maxAttempts = 3;
 
-    }    
-})
-return JSON.parse(response.text)
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const response = await ai.models.generateContent({
+                model: "gemini-3.8-flash",
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseJsonSchema: z.toJSONSchema(interviewReportSchema)
+                }
+            });
 
+            return JSON.parse(response.text);
+
+        } catch (error) {
+            const status = Number(error?.status ?? error?.code);
+
+            if (status !== 503 || attempt === maxAttempts) {
+                throw error;
+            }
+
+            const delay = 2000 * (2 ** (attempt - 1));
+
+            console.log(
+                `Gemini API overloaded. Retrying in ${delay / 1000} seconds...`
+            );
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
 }
+
 
 
 
