@@ -1,8 +1,8 @@
 const { GoogleGenAI } =require("@google/genai");
 const {z}=require('zod');
 const {zodToJsonSchema}=require('zod-to-json-schema');
-const puppeteer=require("puppeteer-core")
-const chromium=require("@sparticuz/chromium")
+const puppeteer=require("puppeteer-core");
+const chromium=require("@sparticuz/chromium");
 
 
 
@@ -54,10 +54,10 @@ async function generateInterviewReport({resume,selfDescription,jobDescription}){
 
     const response= await ai.models.generateContent({
 
-       model: "gemini-3.6-flash",
+       model: "gemini-3.8-flash",
 
         contents:prompt,
-    config:{
+        config:{
         responseMimeType:"application/json",
         responseJsonSchema: z.toJSONSchema(interviewReportSchema)
 
@@ -80,7 +80,7 @@ async function generatePdfFromHtml(htmlContent) {
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
     const pdfBuffer = await page.pdf({
-        format: "A4", margin: {
+            format: "A4", margin: {
             top: "20mm",
             bottom: "20mm",
             left: "15mm",
